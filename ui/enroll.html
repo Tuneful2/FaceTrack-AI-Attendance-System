@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Enroll Student | FaceTrack AI</title>
+
+<style>
+/* ===== RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* ===== PAGE BACKGROUND ===== */
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+header {
+    padding: 20px 60px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: white;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+header h1 {
+    font-size: 26px;
+}
+
+/* ===== MAIN CONTAINER ===== */
+.main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+/* ===== GLASS CARD ===== */
+.card {
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    gap: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 40px;
+    color: white;
+}
+
+/* ===== LEFT SIDE ===== */
+.left {
+    flex: 1;
+}
+
+.left h2 {
+    font-size: 34px;
+    margin-bottom: 10px;
+}
+
+.left p {
+    font-size: 18px;
+    margin-bottom: 25px;
+    color: #e0e7ff;
+}
+
+input {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: none;
+    margin-bottom: 20px;
+}
+
+/* ===== BUTTONS ===== */
+button {
+    padding: 14px 22px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    margin-right: 12px;
+}
+
+.start {
+    background: #22c55e;
+    color: white;
+}
+
+.capture {
+    background: #facc15;
+    color: #1f2933;
+}
+
+/* ===== STATUS ===== */
+#status {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* ===== RIGHT SIDE ===== */
+.right {
+    flex: 1;
+    text-align: center;
+}
+
+video {
+    width: 100%;
+    max-width: 420px;
+    border-radius: 15px;
+    border: 3px solid rgba(255,255,255,0.6);
+    margin-bottom: 15px;
+}
+
+.illustration {
+    width: 100%;
+    max-width: 420px;
+}
+
+/* ===== BACK LINK ===== */
+.back {
+    margin-top: 25px;
+    display: inline-block;
+    color: #e0e7ff;
+    text-decoration: none;
+    font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<header>
+    <div class="logo">👁️</div>
+    <h1>FaceTrack AI</h1>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+
+    <div class="card">
+
+        <!-- LEFT -->
+        <div class="left">
+            <h2>Enroll New Student</h2>
+            <p>
+                Capture a student’s face using webcam and securely generate
+                AI-based facial embeddings for attendance recognition.
+            </p>
+
+            <input type="text" id="student-name" placeholder="Enter student name">
+
+            <button class="start" onclick="startCamera()">🎥 Start Camera</button>
+            <button class="capture" onclick="captureEnroll()">📸 Capture & Enroll</button>
+
+            <p id="status"></p>
+
+            <a class="back" href="index.html">← Back to Dashboard</a>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right">
+            <video id="camera" autoplay></video>
+
+            <img class="illustration"
+                 src="https://cdn-icons-png.flaticon.com/512/4149/4149653.png"
+                 alt="Face Recognition Illustration">
+        </div>
+
+    </div>
+
+</div>
+
+<!-- SCRIPT -->
+<script>
+let video = document.getElementById("camera");
+
+async function startCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+
+        // IMPORTANT: wait for metadata
+        await new Promise(resolve => {
+            video.onloadedmetadata = () => {
+                video.play();
+                resolve();
+            };
+        });
+
+        document.getElementById("status").innerText = "📷 Camera started";
+        document.getElementById("status").style.color = "lightgreen";
+    } catch {
+        document.getElementById("status").innerText = "❌ Camera access denied";
+        document.getElementById("status").style.color = "red";
+    }
+}
+
+async function captureEnroll() {
+    const name = document.getElementById("student-name").value.trim();
+    const status = document.getElementById("status");
+
+    if (!name) {
+        status.innerText = "❌ Enter student name";
+        status.style.color = "red";
+        return;
+    }
+
+    if (!video.srcObject || video.videoWidth === 0) {
+        status.innerText = "❌ Camera not ready";
+        status.style.color = "red";
+        return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+
+    const imageData = canvas.toDataURL("image/jpeg");
+
+    status.innerText = "⏳ Enrolling student...";
+    status.style.color = "yellow";
+
+    try {
+        const response = await fetch("http://127.0.0.1:5000/enroll", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: name,
+                image: imageData
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            status.innerText = result.message;
+            status.style.color = "lightgreen";
+        } else {
+            status.innerText = "❌ Enrollment failed";
+            status.style.color = "red";
+        }
+
+    } catch (err) {
+        console.error(err);
+        status.innerText = "❌ Server error";
+        status.style.color = "red";
+    }
+}
+</script>
+
+
+
+</body>
+</html>

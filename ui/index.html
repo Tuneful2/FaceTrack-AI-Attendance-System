@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FaceTrack AI | Smart Attendance</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ================= GLOBAL ================= */
+body {
+    margin: 0;
+    font-family: "Inter", sans-serif;
+    background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+    color: white;
+    overflow-x: hidden;
+}
+
+/* ================= NAVBAR ================= */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 40px;
+    background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(12px);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.brand img {
+    width: 36px;
+    margin-right: 10px;
+}
+
+.nav-links a {
+    margin-left: 28px;
+    text-decoration: none;
+    color: #e5e7eb;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+}
+
+.nav-links a.active {
+    color: #22d3ee;
+}
+
+.nav-links a.active::after {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #22d3ee;
+}
+
+/* ================= SECTIONS ================= */
+.section {
+    display: none;
+    animation: fadeSlide 0.6s ease forwards;
+}
+
+.section.active {
+    display: block;
+}
+
+@keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================= CARD ================= */
+.card {
+    width: 85%;
+    max-width: 980px;
+    margin: 60px auto;
+    background: rgba(255,255,255,0.16);
+    border-radius: 24px;
+    padding: 45px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+/* ================= BUTTONS ================= */
+.button-group {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: linear-gradient(135deg, #22d3ee, #4f46e5);
+    border: none;
+    padding: 14px 32px;
+    color: white;
+    font-size: 16px;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 12px 35px rgba(34,211,238,0.5);
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 20px 55px rgba(34,211,238,0.7);
+}
+
+/* ================= CAMERA ================= */
+.scan-container {
+    position: relative;
+    width: 440px;
+    margin: 35px auto;
+}
+
+video {
+    width: 100%;
+    border-radius: 18px;
+    display: none;
+}
+
+#camera-placeholder {
+    background: rgba(0,0,0,0.25);
+    border-radius: 18px;
+    padding: 45px;
+    text-align: center;
+}
+
+#camera-placeholder img {
+    width: 95px;
+    opacity: 0.9;
+}
+
+.scan-frame {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    border: 3px solid #22d3ee;
+    box-shadow: 0 0 35px #22d3ee;
+    pointer-events: none;
+}
+
+.scan-line {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+    animation: scan 2.4s linear infinite;
+}
+
+@keyframes scan {
+    from { top: 0; }
+    to { top: 100%; }
+}
+
+/* ================= STATUS ================= */
+.status {
+    text-align: center;
+    font-size: 18px;
+    margin-top: 20px;
+    font-weight: 600;
+}
+
+.status.ready { color: #22c55e; }
+.status.processing { color: #facc15; }
+.status.error { color: #ef4444; }
+
+/* ================= LIVE BADGE ================= */
+.live-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: rgba(0,0,0,0.7);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    display: none;
+    animation: blink 1.2s infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0.4; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="brand">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png">
+        FaceTrack AI
+    </div>
+    <div class="nav-links">
+        <a class="active" onclick="openTab('attendance', this)">Attendance</a>
+        <a onclick="openTab('enroll', this)">Enroll Student</a>
+        <a onclick="openTab('features', this)">Features</a>
+        <a onclick="openTab('about', this)">About Us</a>
+    </div>
+</div>
+
+<!-- ATTENDANCE -->
+<div class="section active" id="attendance">
+    <div class="card">
+        <h2>Face Recognition Attendance</h2>
+        <p>Capture a face using webcam and mark attendance instantly.</p>
+
+        <div class="scan-container">
+            <div id="camera-placeholder">
+                <img src="https://cdn-icons-png.flaticon.com/512/4149/4149678.png">
+                <p>Waiting for Camera</p>
+            </div>
+
+            <video id="camera" autoplay></video>
+            <div class="scan-frame"></div>
+            <div class="scan-line"></div>
+            <div class="live-badge" id="liveBadge">● LIVE</div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn" onclick="startCamera()">📷 Start Camera</button>
+            <button class="btn" onclick="capture()">✔ Capture & Mark</button>
+            <a href="attendance.html" class="btn">📄 View Attendance Log</a>
+        </div>
+
+        <p id="status" class="status ready">🟢 Ready</p>
+    </div>
+</div>
+
+<!-- ENROLL -->
+<div class="section" id="enroll">
+    <div class="card">
+        <h2>Enroll New Student</h2>
+        <p>Register students using webcam and generate embeddings.</p>
+        <a href="enroll.html" class="btn">➕ Go to Enrollment Page</a>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" id="features">
+    <div class="card">
+        <h2>System Features</h2>
+        <ul style="font-size:18px;line-height:1.9">
+            <li>🎯 Real-time Face Recognition</li>
+            <li>🤖 Vision Transformer (ViT) Embeddings</li>
+            <li>📸 Webcam-based Attendance</li>
+            <li>🧾 Automatic CSV Logging</li>
+            <li>➕ Live Student Enrollment</li>
+            <li>🌐 Web-based Dashboard</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ABOUT -->
+<!-- ================= ABOUT ================= -->
+<div class="section" id="about">
+    <div class="card">
+
+        <h2>About FaceTrack AI</h2>
+
+        <!-- Project Description -->
+        <p style="font-size:18px; line-height:1.7; margin-top:15px; color:#e5e7eb;">
+            <strong>FaceTrack AI</strong> is an intelligent web-based attendance management
+            system that leverages computer vision and deep learning to automate
+            attendance using facial recognition. The system uses a Vision Transformer
+            (ViT) model to generate robust facial embeddings and ensures accurate,
+            contactless, and real-time attendance logging through a secure web interface.
+            It not only saves time for teachers and proffessors but also gives a easy to
+            use interface. 
+        </p>
+
+        <!-- Two Column Layout -->
+        <div style="
+            display: flex;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        ">
+
+            <!-- LEFT: Team Members -->
+            <div style="flex:1; min-width:250px;">
+                <h3 style="margin-bottom:15px; color:#22d3ee;">Team Members</h3>
+                <ul style="font-size:18px; line-height:1.8;">
+                    <li>Soham Kurulkar</li>
+                    <li>Soham Patil</li>
+                    <li>Suchit Tumbada</li>
+                    <li>Snehal Dhande</li>
+                </ul>
+            </div>
+
+            <!-- RIGHT: Project Highlights -->
+            <div style="flex:1; min-width:250px;">
+                <h3 style="margin-bottom:15px; color:#22d3ee;">Project Highlights</h3>
+                <ul style="font-size:18px; line-height:1.8;">
+                    <li>Vision Transformer (ViT) based face embeddings</li>
+                    <li>Webcam-driven real-time face recognition</li>
+                    <li>Automatic attendance logging in CSV format</li>
+                    <li>Web-based student enrollment system</li>
+                    <li>Flask-powered backend with browser-based UI</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <p style="margin-top:30px; font-size:16px; color:#c7d2fe;">
+            Department of Artificial Intelligence & Data Science
+        </p>
+
+    </div>
+</div>
+
+
+<!-- SCRIPT -->
+<script>
+function openTab(id, element) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".nav-links a").forEach(a => a.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    element.classList.add("active");
+}
+
+async function startCamera() {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const video = document.getElementById("camera");
+
+    video.srcObject = stream;
+    video.style.display = "block";
+    document.getElementById("camera-placeholder").style.display = "none";
+    document.getElementById("liveBadge").style.display = "block";
+
+    setStatus("Camera Live", "ready");
+}
+
+function setStatus(text, type) {
+    const status = document.getElementById("status");
+    status.innerText = text;
+    status.className = "status " + type;
+}
+
+async function capture() {
+    setStatus("Processing...", "processing");
+
+    const video = document.getElementById("camera");
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+
+    const image_data = canvas.toDataURL("image/jpeg");
+
+    try {
+        const res = await fetch("http://127.0.0.1:5000/recognize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: image_data })
+        });
+
+        const data = await res.json();
+
+        if (data.name === "Unknown Face" || data.name === "No Face Detected") {
+            setStatus("❌ Face Not Recognized", "error");
+        } else {
+            setStatus("✅ Attendance Marked: " + data.name, "ready");
+        }
+
+    } catch {
+        setStatus("❌ Server Error", "error");
+    }
+}
+</script>
+
+</body>
+</html>
